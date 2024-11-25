@@ -63,7 +63,7 @@ async def read_user(user_id: int, db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error reading user: {str(e)}")
 
-@app.get('/users/login', response_model=UserResponse)
+@app.get('/users/login/', response_model=UserResponse)
 async def login_user(username: str, password: str, db: Session = Depends(get_db)):
     try:
         user = db.query(User).filter(User.username == username).filter(User.password == password).first()
