@@ -7,7 +7,7 @@ from pydantic import BaseModel
 app = FastAPI()
 
 # Database setup
-DATABASE_URL = 'sanquin.db';
+DATABASE_URL = 'sqlite:///sanquin.db';
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = sqlalchemy.orm.declarative_base()
@@ -15,10 +15,10 @@ Base = sqlalchemy.orm.declarative_base()
 
 class User(Base):
     __tablename__ = 'users';
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, index=True)
-    email = Column(String)
-    password = Column(String)
+    id: int = Column(Integer, primary_key=True, index=True)
+    username: str = Column(String, index=True)
+    email: str = Column(String)
+    password: str = Column(String)
 
 Base.metadata.create_all(bind=engine)
 
@@ -34,10 +34,10 @@ class UserResponse(BaseModel):
     name: str
     email: str
 
-class UserCreate(Base):
-    username = Column(String, index=True)
-    email = Column(String)
-    password = Column(String)
+class UserCreate(BaseModel):
+    username: str
+    email: str
+    password: str
 
 @app.post('/users/', response_model=UserResponse)
 async def create_user(item: UserCreate, db: Session = Depends(get_db)):
@@ -61,7 +61,7 @@ async def login_user(username: str, password: str, db: Session = Depends(get_db)
         raise HTTPException(status_code=404, detail='User not found')
     return user
 
-if __name__ == 'main':
+if __name__ == '__main__':
     import uvicorn
 
     uvicorn.run(app, host='127.0.0.1', port=8000)
