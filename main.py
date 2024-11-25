@@ -39,6 +39,10 @@ class UserCreate(BaseModel):
     email: str
     password: str
 
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
 @app.post('/users/', response_model=UserResponse)
 async def create_user(item: UserCreate, db: Session = Depends(get_db)):
     try:
@@ -64,9 +68,9 @@ async def read_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Error reading user: {str(e)}")
 
 @app.get('/users/login/', response_model=UserResponse)
-async def login_user(username: str, password: str, db: Session = Depends(get_db)):
+async def login_user(user:UserLogin, db: Session = Depends(get_db)):
     try:
-        user = db.query(User).filter(User.username == username).filter(User.password == password).first()
+        user = db.query(User).filter(User.username == user.username).filter(User.password == user.password).first()
         if user is None:
             raise HTTPException(status_code=404, detail='User not found')
         output = UserResponse(id=user.id, name=user.username, email=user.email)
