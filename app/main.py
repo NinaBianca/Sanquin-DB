@@ -8,7 +8,7 @@ app = FastAPI()
 
 # Database setup
 DATABASE_URL = 'sqlite:///sanquin.db';
-engine = create_engine(DATABASE_URL)
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = sqlalchemy.orm.declarative_base()
 
@@ -41,38 +41,25 @@ class UserCreate(BaseModel):
 
 @app.post('/users/', response_model=UserResponse)
 async def create_user(item: UserCreate, db: Session = Depends(get_db)):
-    try:
-        db_item = User(**item.model_dump())
-        db.add(db_item)
-        db.commit()
-        db.refresh(db_item)
-        output = UserResponse(id=db_item.id, name=db_item.username, email=db_item.email)
-        return output
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"Error creating user: {str(e)}")
+    db_item = User(**item.model_dump())
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
 
 @app.get('/users/{user_id}', response_model=UserResponse)
 async def read_user(user_id: int, db: Session = Depends(get_db)):
-    try:
-        user = db.query(User).filter(User.id == user_id).first()
-        if user is None:
-            raise HTTPException(status_code=404, detail='User not found')
-        output = UserResponse(id=user.id, name=user.username, email=user.email)
-        return output
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error reading user: {str(e)}")
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail='User not found')
+    return user
 
 @app.get('/users/login', response_model=UserResponse)
 async def login_user(username: str, password: str, db: Session = Depends(get_db)):
-    try:
-        user = db.query(User).filter(User.username == username).filter(User.password == password).first()
-        if user is None:
-            raise HTTPException(status_code=404, detail='User not found')
-        output = UserResponse(id=user.id, name=user.username, email=user.email)
-        return output
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error logging in user: {str(e)}")
+    user = db.query(User).filter(User.username == username).filter(User.password == password).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail='User not found')
+    return user
 
 if __name__ == '__main__':
     import uvicorn
